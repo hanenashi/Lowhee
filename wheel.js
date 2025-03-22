@@ -11,7 +11,8 @@ let settings = {
     maxSpins: 10,
     deceleration: 0.1,
     darkness: 1,
-    autoSpin: 0
+    autoSpin: 0,
+    randomize: false // New setting
 };
 let defaultSettings = { ...settings };
 let remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
@@ -49,6 +50,14 @@ function hsvToRgb(h, s, v) {
     return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
 }
 
+// Shuffle array (Fisher-Yates)
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
 // Draw wheel
 function drawWheel() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -79,21 +88,21 @@ function drawWheel() {
         ctx.restore();
     }
 
-    // Draw pointer (red tip at 6 o'clock)
-    const tipY = centerY + radius - 15; // Red tip at wheel edge
-    const baseY = centerY + radius + 45; // Black base below
+    // Draw pointer
+    const tipY = centerY + radius - 15;
+    const baseY = centerY + radius + 45;
     ctx.beginPath();
-    ctx.moveTo(centerX - 30, baseY); // Left base
-    ctx.lineTo(centerX + 30, baseY); // Right base
-    ctx.lineTo(centerX, tipY); // Tip
+    ctx.moveTo(centerX - 30, baseY);
+    ctx.lineTo(centerX + 30, baseY);
+    ctx.lineTo(centerX, tipY);
     ctx.fillStyle = 'black';
     ctx.fill();
 
-    const redBaseY = centerY + radius - 3; // Red base just below tip
+    const redBaseY = centerY + radius - 3;
     ctx.beginPath();
-    ctx.moveTo(centerX - 6, redBaseY); // Left red base
-    ctx.lineTo(centerX + 6, redBaseY); // Right red base
-    ctx.lineTo(centerX, tipY); // Red tip
+    ctx.moveTo(centerX - 6, redBaseY);
+    ctx.lineTo(centerX + 6, redBaseY);
+    ctx.lineTo(centerX, tipY);
     ctx.fillStyle = 'red';
     ctx.fill();
 }
@@ -103,10 +112,10 @@ function getWinningSection() {
     const sections = remainingNumbers.length;
     if (sections === 0) return null;
     const anglePerSection = 360 / sections;
-    const tipAngle = 180; // Pointer at 6 o'clock
-    let finalAngle = ((angle * 180 / Math.PI) + 90) % 360; // Adjust for initial 90° offset
+    const tipAngle = 180;
+    let finalAngle = ((angle * 180 / Math.PI) + 90) % 360;
     if (finalAngle < 0) finalAngle += 360;
-    let relativeAngle = (tipAngle - finalAngle + 360) % 360; // Angle from wheel to pointer
+    let relativeAngle = (tipAngle - finalAngle + 360) % 360;
     const sectionIdx = Math.floor(relativeAngle / anglePerSection);
     return remainingNumbers[sectionIdx];
 }
@@ -128,7 +137,10 @@ function drawWinners() {
 // Event listeners
 document.getElementById('spinBtn').addEventListener('click', () => {
     if (!spinning && remainingNumbers.length) {
-        if (winners.length) remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
+        if (winners.length) {
+            remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
+            if (settings.randomize) shuffle(remainingNumbers); // Shuffle after first winner
+        }
         if (remainingNumbers.length) {
             spinning = true;
             spinSpeed = settings.maxSpeed;
@@ -159,6 +171,7 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     document.getElementById('deceleration').value = settings.deceleration;
     document.getElementById('darkness').value = settings.darkness;
     document.getElementById('autoSpinCount').value = settings.autoSpin;
+    document.getElementById('randomize').checked = settings.randomize;
 });
 
 document.getElementById('saveSettings').addEventListener('click', () => {
@@ -169,6 +182,7 @@ document.getElementById('saveSettings').addEventListener('click', () => {
     settings.deceleration = Math.min(Math.max(0.01, +document.getElementById('deceleration').value), 1);
     settings.darkness = Math.min(Math.max(1, +document.getElementById('darkness').value), 10);
     settings.autoSpin = Math.min(Math.max(0, +document.getElementById('autoSpinCount').value), 50);
+    settings.randomize = document.getElementById('randomize').checked;
     remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
     winners = [];
     document.getElementById('settingsPanel').style.display = 'none';
@@ -183,6 +197,7 @@ document.getElementById('resetSettings').addEventListener('click', () => {
     document.getElementById('deceleration').value = settings.deceleration;
     document.getElementById('darkness').value = settings.darkness;
     document.getElementById('autoSpinCount').value = settings.autoSpin;
+    document.getElementById('randomize').checked = settings.randomize;
 });
 
 // Animation loop
@@ -193,10 +208,13 @@ function animate() {
             spinSpeed = settings.maxSpeed;
             spinDistanceRemaining = Math.random() * (settings.maxSpins - settings.minSpins) + settings.minSpins * 360;
             autoSpinCount--;
-            if (winners.length) remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
+            if (winners.length) {
+                remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
+                if (settings.randomize) shuffle(remainingNumbers);
+            }
         }
         if (spinning) {
-            angle -= spinSpeed * Math.PI / 180; // Convert to radians
+            angle -= spinSpeed * Math.PI / 180;
             spinDistanceRemaining -= spinSpeed;
             if (spinDistanceRemaining <= 0) {
                 spinSpeed -= settings.deceleration;
