@@ -16,7 +16,7 @@ let settings = {
 let defaultSettings = { ...settings };
 let remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
 let winners = [];
-let angle = Math.PI / 2; // 90 degrees
+let angle = Math.PI / 2; // 90 degrees (3 o'clock)
 let spinSpeed = 0;
 let spinDistanceRemaining = 0;
 let spinning = false;
@@ -79,7 +79,7 @@ function drawWheel() {
         ctx.restore();
     }
 
-    // Draw pointer (matching Python)
+    // Draw pointer (red tip at 6 o'clock)
     const tipY = centerY + radius - 15; // Red tip at wheel edge
     const baseY = centerY + radius + 45; // Black base below
     ctx.beginPath();
@@ -103,13 +103,12 @@ function getWinningSection() {
     const sections = remainingNumbers.length;
     if (sections === 0) return null;
     const anglePerSection = 360 / sections;
-    const tipAngle = 180; // Pointer at bottom (180° in JS coords)
-    let finalAngle = (angle * 180 / Math.PI) % 360; // Wheel angle in degrees
+    const tipAngle = 180; // Pointer at 6 o'clock
+    let finalAngle = ((angle * 180 / Math.PI) + 90) % 360; // Adjust for initial 90° offset
     if (finalAngle < 0) finalAngle += 360;
-    let relativeAngle = (finalAngle - tipAngle + 360) % 360; // Angle from pointer to wheel
+    let relativeAngle = (tipAngle - finalAngle + 360) % 360; // Angle from wheel to pointer
     const sectionIdx = Math.floor(relativeAngle / anglePerSection);
-    const correctedIdx = (sections - sectionIdx - 1 + sections) % sections; // Reverse and adjust
-    return remainingNumbers[correctedIdx];
+    return remainingNumbers[sectionIdx];
 }
 
 // Draw winners table
