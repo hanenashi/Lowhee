@@ -1,0 +1,41 @@
+body {
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+#container {
+    text-align: center;
+}
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    background: linear-gradient(#c8c8c8, #969696);
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background: linear-gradient(#dcdcdc, #aaaaaa);
+}
+#winnersTable {
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+#winnersTable td {
+    border: 1px solid #8b4513;
+    width: 50px;
+    height: 30px;
+    text-align: center;
+}
+#settingsPanel {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
