@@ -79,17 +79,21 @@ function drawWheel() {
         ctx.restore();
     }
 
-    // Draw pointer
+    // Draw pointer (matching Python)
+    const tipY = centerY + radius - 15; // Red tip at wheel edge
+    const baseY = centerY + radius + 45; // Black base below
     ctx.beginPath();
-    ctx.moveTo(centerX - 30, centerY + radius - 15);
-    ctx.lineTo(centerX + 30, centerY + radius - 15);
-    ctx.lineTo(centerX, centerY + radius + 45);
+    ctx.moveTo(centerX - 30, baseY); // Left base
+    ctx.lineTo(centerX + 30, baseY); // Right base
+    ctx.lineTo(centerX, tipY); // Tip
     ctx.fillStyle = 'black';
     ctx.fill();
+
+    const redBaseY = centerY + radius - 3; // Red base just below tip
     ctx.beginPath();
-    ctx.moveTo(centerX - 6, centerY + radius - 15);
-    ctx.lineTo(centerX + 6, centerY + radius - 15);
-    ctx.lineTo(centerX, centerY + radius - 3);
+    ctx.moveTo(centerX - 6, redBaseY); // Left red base
+    ctx.lineTo(centerX + 6, redBaseY); // Right red base
+    ctx.lineTo(centerX, tipY); // Red tip
     ctx.fillStyle = 'red';
     ctx.fill();
 }
@@ -99,7 +103,7 @@ function getWinningSection() {
     const sections = remainingNumbers.length;
     if (sections === 0) return null;
     const anglePerSection = 360 / sections;
-    const tipAngle = 0; // Pointer at top (0°)
+    const tipAngle = 180; // Pointer at bottom (180° in JS, matches Python's top-down)
     const finalAngle = (angle * 180 / Math.PI) % 360;
     const relativeAngle = (tipAngle - finalAngle + 360) % 360;
     const sectionIdx = Math.floor(relativeAngle / anglePerSection) % sections;
