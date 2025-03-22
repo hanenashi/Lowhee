@@ -103,11 +103,13 @@ function getWinningSection() {
     const sections = remainingNumbers.length;
     if (sections === 0) return null;
     const anglePerSection = 360 / sections;
-    const tipAngle = 180; // Pointer at bottom (180° in JS, matches Python's top-down)
-    const finalAngle = (angle * 180 / Math.PI) % 360;
-    const relativeAngle = (tipAngle - finalAngle + 360) % 360;
-    const sectionIdx = Math.floor(relativeAngle / anglePerSection) % sections;
-    return remainingNumbers[sectionIdx];
+    const tipAngle = 180; // Pointer at bottom (180° in JS coords)
+    let finalAngle = (angle * 180 / Math.PI) % 360; // Wheel angle in degrees
+    if (finalAngle < 0) finalAngle += 360;
+    let relativeAngle = (finalAngle - tipAngle + 360) % 360; // Angle from pointer to wheel
+    const sectionIdx = Math.floor(relativeAngle / anglePerSection);
+    const correctedIdx = (sections - sectionIdx - 1 + sections) % sections; // Reverse and adjust
+    return remainingNumbers[correctedIdx];
 }
 
 // Draw winners table
