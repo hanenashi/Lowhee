@@ -12,12 +12,14 @@ let settings = {
     deceleration: 0.1,
     darkness: 1,
     autoSpin: 0,
-    randomize: false // New setting
+    randomize: false,
+    centerCircleWidth: 100, // New: Black circle diameter
+    dotWidth: 5            // New: White dot diameter
 };
 let defaultSettings = { ...settings };
 let remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
 let winners = [];
-let angle = Math.PI / 2; // 90 degrees (3 o'clock)
+let angle = Math.PI / 2;
 let spinSpeed = 0;
 let spinDistanceRemaining = 0;
 let spinning = false;
@@ -50,7 +52,7 @@ function hsvToRgb(h, s, v) {
     return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
 }
 
-// Shuffle array (Fisher-Yates)
+// Shuffle array
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -87,6 +89,21 @@ function drawWheel() {
         ctx.fillText(remainingNumbers[i], -ctx.measureText(remainingNumbers[i]).width / 2, 5);
         ctx.restore();
     }
+
+    // Draw black center circle
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, settings.centerCircleWidth / 2, 0, 2 * Math.PI);
+    ctx.fillStyle = 'black';
+    ctx.fill();
+
+    // Draw white dot (off-center, rotates with wheel)
+    const dotOffset = 20; // Distance from center
+    const dotX = centerX + dotOffset * Math.cos(angle);
+    const dotY = centerY + dotOffset * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, settings.dotWidth / 2, 0, 2 * Math.PI);
+    ctx.fillStyle = 'white';
+    ctx.fill();
 
     // Draw pointer
     const tipY = centerY + radius - 15;
@@ -139,7 +156,7 @@ document.getElementById('spinBtn').addEventListener('click', () => {
     if (!spinning && remainingNumbers.length) {
         if (winners.length) {
             remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
-            if (settings.randomize) shuffle(remainingNumbers); // Shuffle after first winner
+            if (settings.randomize) shuffle(remainingNumbers);
         }
         if (remainingNumbers.length) {
             spinning = true;
@@ -172,6 +189,8 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     document.getElementById('darkness').value = settings.darkness;
     document.getElementById('autoSpinCount').value = settings.autoSpin;
     document.getElementById('randomize').checked = settings.randomize;
+    document.getElementById('centerCircleWidth').value = settings.centerCircleWidth;
+    document.getElementById('dotWidth').value = settings.dotWidth;
 });
 
 document.getElementById('saveSettings').addEventListener('click', () => {
@@ -183,6 +202,8 @@ document.getElementById('saveSettings').addEventListener('click', () => {
     settings.darkness = Math.min(Math.max(1, +document.getElementById('darkness').value), 10);
     settings.autoSpin = Math.min(Math.max(0, +document.getElementById('autoSpinCount').value), 50);
     settings.randomize = document.getElementById('randomize').checked;
+    settings.centerCircleWidth = Math.min(Math.max(10, +document.getElementById('centerCircleWidth').value), 200);
+    settings.dotWidth = Math.min(Math.max(2, +document.getElementById('dotWidth').value), 20);
     remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
     winners = [];
     document.getElementById('settingsPanel').style.display = 'none';
@@ -198,6 +219,8 @@ document.getElementById('resetSettings').addEventListener('click', () => {
     document.getElementById('darkness').value = settings.darkness;
     document.getElementById('autoSpinCount').value = settings.autoSpin;
     document.getElementById('randomize').checked = settings.randomize;
+    document.getElementById('centerCircleWidth').value = settings.centerCircleWidth;
+    document.getElementById('dotWidth').value = settings.dotWidth;
 });
 
 // Animation loop
