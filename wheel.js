@@ -2,7 +2,6 @@ const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 const centerX = canvas.width / 2;
 const centerY = 300;
-const radius = 250;
 
 let settings = {
     sections: 37,
@@ -15,16 +14,25 @@ let settings = {
     randomize: false,
     centerCircleWidth: 100,
     dotWidth: 5,
-    dotOffset: 20,           // New: Dot offset
-    centerCircleColor: '#000000', // New: Center circle color
-    dotColor: '#FFFFFF',     // New: Dot color
-    borderColor: '#8b4513',  // New: Section border color
-    borderThickness: 2,      // New: Border thickness
-    bgColor: '#000000',      // New: Background color
-    numberColor: '#000000',  // New: Numbers color
-    numberStyle: 'regular'   // New: Bold/regular
+    dotOffset: 20,
+    centerCircleColor: '#000000',
+    dotColor: '#FFFFFF',
+    borderColor: '#8b4513',
+    borderThickness: 2,
+    bgColor: '#000000',
+    numberColor: '#000000',
+    numberStyle: 'regular',
+    wheelSize: 250,        // New: Wheel radius
+    wheelFontSize: 20,     // New: Wheel numbers font size
+    tableFontSize: 16      // New: Table numbers font size
 };
 let defaultSettings = { ...settings };
+
+// Load saved settings from localStorage
+if (localStorage.getItem('wheelSettings')) {
+    settings = JSON.parse(localStorage.getItem('wheelSettings'));
+}
+
 let remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
 let winners = [];
 let angle = Math.PI / 2;
@@ -70,6 +78,7 @@ function shuffle(array) {
 
 // Draw wheel
 function drawWheel() {
+    const radius = settings.wheelSize;
     ctx.fillStyle = settings.bgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -95,7 +104,7 @@ function drawWheel() {
         ctx.translate(textX, textY);
         ctx.rotate(textAngle + Math.PI / 2);
         ctx.fillStyle = settings.numberColor;
-        ctx.font = `20px Arial ${settings.numberStyle === 'bold' ? 'bold' : ''}`;
+        ctx.font = `${settings.wheelFontSize}px Arial ${settings.numberStyle === 'bold' ? 'bold' : ''}`;
         ctx.fillText(remainingNumbers[i], -ctx.measureText(remainingNumbers[i]).width / 2, 5);
         ctx.restore();
     }
@@ -106,7 +115,7 @@ function drawWheel() {
     ctx.fillStyle = settings.centerCircleColor;
     ctx.fill();
 
-    // Draw white dot
+    // Draw dot
     const dotX = centerX + settings.dotOffset * Math.cos(angle);
     const dotY = centerY + settings.dotOffset * Math.sin(angle);
     ctx.beginPath();
@@ -149,6 +158,7 @@ function getWinningSection() {
 // Draw winners table
 function drawWinners() {
     const table = document.getElementById('winnersTable');
+    table.style.setProperty('--table-font-size', `${settings.tableFontSize}px`);
     table.innerHTML = '';
     for (let i = 0; i < 5; i++) {
         const row = table.insertRow();
@@ -209,6 +219,9 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     document.getElementById('numberColor').value = settings.numberColor;
     document.getElementById('numberRegular').checked = settings.numberStyle === 'regular';
     document.getElementById('numberBold').checked = settings.numberStyle === 'bold';
+    document.getElementById('wheelSize').value = settings.wheelSize;
+    document.getElementById('wheelFontSize').value = settings.wheelFontSize;
+    document.getElementById('tableFontSize').value = settings.tableFontSize;
 });
 
 document.getElementById('saveSettings').addEventListener('click', () => {
@@ -230,8 +243,12 @@ document.getElementById('saveSettings').addEventListener('click', () => {
     settings.bgColor = document.getElementById('bgColor').value;
     settings.numberColor = document.getElementById('numberColor').value;
     settings.numberStyle = document.getElementById('numberBold').checked ? 'bold' : 'regular';
+    settings.wheelSize = Math.min(Math.max(100, +document.getElementById('wheelSize').value), 300);
+    settings.wheelFontSize = Math.min(Math.max(10, +document.getElementById('wheelFontSize').value), 50);
+    settings.tableFontSize = Math.min(Math.max(10, +document.getElementById('tableFontSize').value), 30);
     remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
     winners = [];
+    localStorage.setItem('wheelSettings', JSON.stringify(settings)); // Save to localStorage
     document.getElementById('settingsPanel').style.display = 'none';
 });
 
@@ -256,6 +273,9 @@ document.getElementById('resetSettings').addEventListener('click', () => {
     document.getElementById('numberColor').value = settings.numberColor;
     document.getElementById('numberRegular').checked = settings.numberStyle === 'regular';
     document.getElementById('numberBold').checked = settings.numberStyle === 'bold';
+    document.getElementById('wheelSize').value = settings.wheelSize;
+    document.getElementById('wheelFontSize').value = settings.wheelFontSize;
+    document.getElementById('tableFontSize').value = settings.tableFontSize;
 });
 
 // Animation loop
