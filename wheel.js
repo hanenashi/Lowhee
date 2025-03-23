@@ -13,8 +13,16 @@ let settings = {
     darkness: 1,
     autoSpin: 0,
     randomize: false,
-    centerCircleWidth: 100, // New: Black circle diameter
-    dotWidth: 5            // New: White dot diameter
+    centerCircleWidth: 100,
+    dotWidth: 5,
+    dotOffset: 20,           // New: Dot offset
+    centerCircleColor: '#000000', // New: Center circle color
+    dotColor: '#FFFFFF',     // New: Dot color
+    borderColor: '#8b4513',  // New: Section border color
+    borderThickness: 2,      // New: Border thickness
+    bgColor: '#000000',      // New: Background color
+    numberColor: '#000000',  // New: Numbers color
+    numberStyle: 'regular'   // New: Bold/regular
 };
 let defaultSettings = { ...settings };
 let remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
@@ -62,7 +70,9 @@ function shuffle(array) {
 
 // Draw wheel
 function drawWheel() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = settings.bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     const sections = remainingNumbers.length;
     if (sections === 0) return;
     const anglePerSection = 2 * Math.PI / sections;
@@ -74,8 +84,8 @@ function drawWheel() {
         ctx.arc(centerX, centerY, radius, angle + i * anglePerSection, angle + (i + 1) * anglePerSection);
         ctx.fillStyle = colors[i];
         ctx.fill();
-        ctx.strokeStyle = '#8b4513';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = settings.borderColor;
+        ctx.lineWidth = settings.borderThickness;
         ctx.stroke();
 
         const textAngle = angle + (i + 0.5) * anglePerSection;
@@ -84,25 +94,24 @@ function drawWheel() {
         ctx.save();
         ctx.translate(textX, textY);
         ctx.rotate(textAngle + Math.PI / 2);
-        ctx.fillStyle = 'black';
-        ctx.font = '20px Arial';
+        ctx.fillStyle = settings.numberColor;
+        ctx.font = `20px Arial ${settings.numberStyle === 'bold' ? 'bold' : ''}`;
         ctx.fillText(remainingNumbers[i], -ctx.measureText(remainingNumbers[i]).width / 2, 5);
         ctx.restore();
     }
 
-    // Draw black center circle
+    // Draw center circle
     ctx.beginPath();
     ctx.arc(centerX, centerY, settings.centerCircleWidth / 2, 0, 2 * Math.PI);
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = settings.centerCircleColor;
     ctx.fill();
 
-    // Draw white dot (off-center, rotates with wheel)
-    const dotOffset = 20; // Distance from center
-    const dotX = centerX + dotOffset * Math.cos(angle);
-    const dotY = centerY + dotOffset * Math.sin(angle);
+    // Draw white dot
+    const dotX = centerX + settings.dotOffset * Math.cos(angle);
+    const dotY = centerY + settings.dotOffset * Math.sin(angle);
     ctx.beginPath();
     ctx.arc(dotX, dotY, settings.dotWidth / 2, 0, 2 * Math.PI);
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = settings.dotColor;
     ctx.fill();
 
     // Draw pointer
@@ -191,6 +200,15 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     document.getElementById('randomize').checked = settings.randomize;
     document.getElementById('centerCircleWidth').value = settings.centerCircleWidth;
     document.getElementById('dotWidth').value = settings.dotWidth;
+    document.getElementById('dotOffset').value = settings.dotOffset;
+    document.getElementById('centerCircleColor').value = settings.centerCircleColor;
+    document.getElementById('dotColor').value = settings.dotColor;
+    document.getElementById('borderColor').value = settings.borderColor;
+    document.getElementById('borderThickness').value = settings.borderThickness;
+    document.getElementById('bgColor').value = settings.bgColor;
+    document.getElementById('numberColor').value = settings.numberColor;
+    document.getElementById('numberRegular').checked = settings.numberStyle === 'regular';
+    document.getElementById('numberBold').checked = settings.numberStyle === 'bold';
 });
 
 document.getElementById('saveSettings').addEventListener('click', () => {
@@ -204,6 +222,14 @@ document.getElementById('saveSettings').addEventListener('click', () => {
     settings.randomize = document.getElementById('randomize').checked;
     settings.centerCircleWidth = Math.min(Math.max(10, +document.getElementById('centerCircleWidth').value), 200);
     settings.dotWidth = Math.min(Math.max(2, +document.getElementById('dotWidth').value), 20);
+    settings.dotOffset = Math.min(Math.max(0, +document.getElementById('dotOffset').value), 100);
+    settings.centerCircleColor = document.getElementById('centerCircleColor').value;
+    settings.dotColor = document.getElementById('dotColor').value;
+    settings.borderColor = document.getElementById('borderColor').value;
+    settings.borderThickness = Math.min(Math.max(1, +document.getElementById('borderThickness').value), 10);
+    settings.bgColor = document.getElementById('bgColor').value;
+    settings.numberColor = document.getElementById('numberColor').value;
+    settings.numberStyle = document.getElementById('numberBold').checked ? 'bold' : 'regular';
     remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
     winners = [];
     document.getElementById('settingsPanel').style.display = 'none';
@@ -221,6 +247,15 @@ document.getElementById('resetSettings').addEventListener('click', () => {
     document.getElementById('randomize').checked = settings.randomize;
     document.getElementById('centerCircleWidth').value = settings.centerCircleWidth;
     document.getElementById('dotWidth').value = settings.dotWidth;
+    document.getElementById('dotOffset').value = settings.dotOffset;
+    document.getElementById('centerCircleColor').value = settings.centerCircleColor;
+    document.getElementById('dotColor').value = settings.dotColor;
+    document.getElementById('borderColor').value = settings.borderColor;
+    document.getElementById('borderThickness').value = settings.borderThickness;
+    document.getElementById('bgColor').value = settings.bgColor;
+    document.getElementById('numberColor').value = settings.numberColor;
+    document.getElementById('numberRegular').checked = settings.numberStyle === 'regular';
+    document.getElementById('numberBold').checked = settings.numberStyle === 'bold';
 });
 
 // Animation loop
