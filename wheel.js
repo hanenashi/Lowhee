@@ -169,10 +169,10 @@ async function flashWinner(winner) {
 
     flashing = true;
     const sectionIdx = winner.index;
-    const cellIdx = winners.length;
     const flashColor = settings.flashColor;
     const originalColor = generatePastelColors(remainingNumbers.length, settings.darkness)[sectionIdx];
 
+    // Flash wheel section first
     for (let i = 0; i < settings.flashCount; i++) {
         drawWheel(sectionIdx, flashColor);
         await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
@@ -180,10 +180,11 @@ async function flashWinner(winner) {
         await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
     }
 
+    // Then update table and flash cell
     winners.push(winner.number);
     drawWinners();
-
     const table = document.getElementById('winnersTable');
+    const cellIdx = winners.length - 1; // Last added winner
     const cell = table.rows[Math.floor(cellIdx / 10)].cells[cellIdx % 10];
     const originalBg = settings.bgColor;
 
@@ -355,8 +356,8 @@ function animate() {
         spinDistanceRemaining -= Math.abs(spinSpeed);
         if (spinDistanceRemaining <= 0) {
             spinSpeed -= settings.deceleration * Math.sign(spinSpeed);
-            if (Math.abs(spinSpeed) < 0.01) { // Tighter threshold
-                spinSpeed = 0; // Force stop
+            if (Math.abs(spinSpeed) < 0.01) {
+                spinSpeed = 0;
                 spinning = false;
                 const winner = getWinningSection();
                 flashWinner(winner).then(() => {
