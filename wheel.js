@@ -22,13 +22,19 @@ let settings = {
     bgColor: '#000000',
     numberColor: '#000000',
     numberStyle: 'regular',
-    wheelSize: 250,        // New: Wheel radius
-    wheelFontSize: 20,     // New: Wheel numbers font size
-    tableFontSize: 16      // New: Table numbers font size
+    wheelSize: 250,
+    wheelFontSize: 20,
+    tableFontSize: 16,
+    spinDirection: 'counterclockwise', // New: Spin direction
+    randomSpinDirection: false,        // New: Randomize direction
+    flashAnimation: true,              // New: Enable flash
+    flashSpeed: 200,                   // New: Flash speed in ms
+    flashCount: 2,                     // New: Number of flashes
+    flashColor: '#FFFFFF'              // New: Flash color
 };
 let defaultSettings = { ...settings };
 
-// Load saved settings from localStorage
+// Load saved settings
 if (localStorage.getItem('wheelSettings')) {
     settings = JSON.parse(localStorage.getItem('wheelSettings'));
 }
@@ -76,8 +82,8 @@ function shuffle(array) {
     }
 }
 
-// Draw wheel
-function drawWheel() {
+// Draw wheel with optional flash
+function drawWheel(flashSection = -1, flashColor = null) {
     const radius = settings.wheelSize;
     ctx.fillStyle = settings.bgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -91,7 +97,7 @@ function drawWheel() {
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
         ctx.arc(centerX, centerY, radius, angle + i * anglePerSection, angle + (i + 1) * anglePerSection);
-        ctx.fillStyle = colors[i];
+        ctx.fillStyle = (i === flashSection && flashColor) ? flashColor : colors[i];
         ctx.fill();
         ctx.strokeStyle = settings.borderColor;
         ctx.lineWidth = settings.borderThickness;
@@ -109,13 +115,11 @@ function drawWheel() {
         ctx.restore();
     }
 
-    // Draw center circle
     ctx.beginPath();
     ctx.arc(centerX, centerY, settings.centerCircleWidth / 2, 0, 2 * Math.PI);
     ctx.fillStyle = settings.centerCircleColor;
     ctx.fill();
 
-    // Draw dot
     const dotX = centerX + settings.dotOffset * Math.cos(angle);
     const dotY = centerY + settings.dotOffset * Math.sin(angle);
     ctx.beginPath();
@@ -123,7 +127,6 @@ function drawWheel() {
     ctx.fillStyle = settings.dotColor;
     ctx.fill();
 
-    // Draw pointer
     const tipY = centerY + radius - 15;
     const baseY = centerY + radius + 45;
     ctx.beginPath();
@@ -152,7 +155,42 @@ function getWinningSection() {
     if (finalAngle < 0) finalAngle += 360;
     let relativeAngle = (tipAngle - finalAngle + 360) % 360;
     const sectionIdx = Math.floor(relativeAngle / anglePerSection);
-    return remainingNumbers[sectionIdx];
+    return { number: remainingNumbers[sectionIdx], index: sectionIdx };
+}
+
+// Flash animation
+async function flashWinner(winner) {
+    if (!settings.flashAnimation || !winner) {
+        winners.push(winner.number);
+        drawWinners();
+        return;
+    }
+
+    const sectionIdx = winner.index;
+    const cellIdx = winners.length;
+    const flashColor = settings.flashColor;
+    const originalColor = generatePastelColors(remainingNumbers.length, settings.darkness)[sectionIdx];
+
+    for (let i = 0; i < settings.flashCount; i++) {
+        drawWheel(sectionIdx, flashColor);
+        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+        drawWheel(sectionIdx, originalColor);
+        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+    }
+
+    winners.push(winner.number);
+    drawWinners();
+
+    const table = document.getElementById('winnersTable');
+    const cell = table.rows[Math.floor(cellIdx / 10)].cells[cellIdx % 10];
+    const originalBg = settings.bgColor;
+
+    for (let i = 0; i < settings.flashCount; i++) {
+        cell.style.backgroundColor = flashColor;
+        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+        cell.style.backgroundColor = originalBg;
+        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+    }
 }
 
 // Draw winners table
@@ -181,6 +219,11 @@ document.getElementById('spinBtn').addEventListener('click', () => {
             spinning = true;
             spinSpeed = settings.maxSpeed;
             spinDistanceRemaining = Math.random() * (settings.maxSpins - settings.minSpins) + settings.minSpins * 360;
+            if (settings.randomSpinDirection) {
+                spinSpeed = Math.random() < 0.5 ? -spinSpeed : spinSpeed;
+            } else {
+                spinSpeed = settings.spinDirection === 'clockwise' ? spinSpeed : -spinSpeed;
+            }
         }
     }
 });
@@ -222,6 +265,13 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     document.getElementById('wheelSize').value = settings.wheelSize;
     document.getElementById('wheelFontSize').value = settings.wheelFontSize;
     document.getElementById('tableFontSize').value = settings.tableFontSize;
+    document.getElementById('spinCounterclockwise').checked = settings.spinDirection === 'counterclockwise';
+    document.getElementById('spinClockwise').checked = settings.spinDirection === 'clockwise';
+    document.getElementById('randomSpinDirection').checked = settings.randomSpinDirection;
+    document.getElementById('flashAnimation').checked = settings.flashAnimation;
+    document.getElementById('flashSpeed').value = settings.flashSpeed;
+    document.getElementById('flashCount').value = settings.flashCount;
+    document.getElementById('flashColor').value = settings.flashColor;
 });
 
 document.getElementById('saveSettings').addEventListener('click', () => {
@@ -246,9 +296,15 @@ document.getElementById('saveSettings').addEventListener('click', () => {
     settings.wheelSize = Math.min(Math.max(100, +document.getElementById('wheelSize').value), 300);
     settings.wheelFontSize = Math.min(Math.max(10, +document.getElementById('wheelFontSize').value), 50);
     settings.tableFontSize = Math.min(Math.max(10, +document.getElementById('tableFontSize').value), 30);
+    settings.spinDirection = document.getElementById('spinClockwise').checked ? 'clockwise' : 'counterclockwise';
+    settings.randomSpinDirection = document.getElementById('randomSpinDirection').checked;
+    settings.flashAnimation = document.getElementById('flashAnimation').checked;
+    settings.flashSpeed = Math.min(Math.max(50, +document.getElementById('flashSpeed').value), 1000);
+    settings.flashCount = Math.min(Math.max(1, +document.getElementById('flashCount').value), 10);
+    settings.flashColor = document.getElementById('flashColor').value;
     remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
     winners = [];
-    localStorage.setItem('wheelSettings', JSON.stringify(settings)); // Save to localStorage
+    localStorage.setItem('wheelSettings', JSON.stringify(settings));
     document.getElementById('settingsPanel').style.display = 'none';
 });
 
@@ -276,6 +332,13 @@ document.getElementById('resetSettings').addEventListener('click', () => {
     document.getElementById('wheelSize').value = settings.wheelSize;
     document.getElementById('wheelFontSize').value = settings.wheelFontSize;
     document.getElementById('tableFontSize').value = settings.tableFontSize;
+    document.getElementById('spinCounterclockwise').checked = settings.spinDirection === 'counterclockwise';
+    document.getElementById('spinClockwise').checked = settings.spinDirection === 'clockwise';
+    document.getElementById('randomSpinDirection').checked = settings.randomSpinDirection;
+    document.getElementById('flashAnimation').checked = settings.flashAnimation;
+    document.getElementById('flashSpeed').value = settings.flashSpeed;
+    document.getElementById('flashCount').value = settings.flashCount;
+    document.getElementById('flashColor').value = settings.flashColor;
 });
 
 // Animation loop
@@ -285,6 +348,11 @@ function animate() {
             spinning = true;
             spinSpeed = settings.maxSpeed;
             spinDistanceRemaining = Math.random() * (settings.maxSpins - settings.minSpins) + settings.minSpins * 360;
+            if (settings.randomSpinDirection) {
+                spinSpeed = Math.random() < 0.5 ? -spinSpeed : spinSpeed;
+            } else {
+                spinSpeed = settings.spinDirection === 'clockwise' ? spinSpeed : -spinSpeed;
+            }
             autoSpinCount--;
             if (winners.length) {
                 remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
@@ -292,21 +360,22 @@ function animate() {
             }
         }
         if (spinning) {
-            angle -= spinSpeed * Math.PI / 180;
-            spinDistanceRemaining -= spinSpeed;
+            angle += spinSpeed * Math.PI / 180; // Positive for clockwise, negative for counterclockwise
+            spinDistanceRemaining -= Math.abs(spinSpeed);
             if (spinDistanceRemaining <= 0) {
-                spinSpeed -= settings.deceleration;
-                if (spinSpeed <= 0) {
+                spinSpeed -= settings.deceleration * Math.sign(spinSpeed);
+                if (Math.abs(spinSpeed) <= 0) {
                     spinning = false;
                     const winner = getWinningSection();
-                    if (winner !== null) winners.push(winner);
-                    if (autoSpinning && autoSpinCount === 0) autoSpinning = false;
+                    flashWinner(winner).then(() => {
+                        if (autoSpinning && autoSpinCount === 0) autoSpinning = false;
+                    });
                 }
             }
         }
     }
     drawWheel();
-    drawWinners();
+    if (!spinning) drawWinners();
     requestAnimationFrame(animate);
 }
 
