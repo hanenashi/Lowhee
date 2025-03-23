@@ -17,16 +17,35 @@
         <table id="winnersTable"></table>
         <div id="settingsPanel" style="display: none;">
             <h2>Settings</h2>
+            <h3>Spin Behavior</h3>
             <label>Sections: <input id="sections" type="number" value="37"></label><br>
             <label>Max Speed: <input id="maxSpeed" type="number" value="20"></label><br>
             <label>Min Spins: <input id="minSpins" type="number" value="5"></label><br>
             <label>Max Spins: <input id="maxSpins" type="number" value="10"></label><br>
             <label>Deceleration: <input id="deceleration" type="number" step="0.01" value="0.1"></label><br>
-            <label>Darkness (1-10): <input id="darkness" type="number" value="1"></label><br>
             <label>Auto Spin Count: <input id="autoSpinCount" type="number" value="0"></label><br>
             <label>Randomize Positions: <input id="randomize" type="checkbox"></label><br>
+
+            <h3>Wheel Appearance</h3>
+            <label>Darkness (1-10): <input id="darkness" type="number" value="1"></label><br>
+            <label>Background Color: <input id="bgColor" type="color" value="#000000"></label><br>
+            <label>Border Color: <input id="borderColor" type="color" value="#8b4513"></label><br>
+            <label>Border Thickness: <input id="borderThickness" type="number" value="2"></label><br>
+
+            <h3>Center Elements</h3>
             <label>Center Circle Width: <input id="centerCircleWidth" type="number" value="100"></label><br>
+            <label>Center Circle Color: <input id="centerCircleColor" type="color" value="#000000"></label><br>
             <label>Dot Width: <input id="dotWidth" type="number" value="5"></label><br>
+            <label>Dot Offset: <input id="dotOffset" type="number" value="20"></label><br>
+            <label>Dot Color: <input id="dotColor" type="color" value="#FFFFFF"></label><br>
+
+            <h3>Numbers</h3>
+            <label>Number Color: <input id="numberColor" type="color" value="#000000"></label><br>
+            <label>Number Style: 
+                <input type="radio" name="numberStyle" id="numberRegular" value="regular" checked> Regular
+                <input type="radio" name="numberStyle" id="numberBold" value="bold"> Bold
+            </label><br>
+
             <button id="saveSettings">Save</button>
             <button id="resetSettings">Reset</button>
         </div>
