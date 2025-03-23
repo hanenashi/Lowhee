@@ -375,8 +375,10 @@ function animate() {
         }
         autoSpinCount--;
     }
-    drawWheel();
-    if (!spinning && !flashing) drawWinners();
+    if (!flashing) { // Only draw if not flashing
+        drawWheel();
+        if (!spinning) drawWinners();
+    }
     requestAnimationFrame(animate);
 }
 
