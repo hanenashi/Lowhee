@@ -161,38 +161,43 @@ function getWinningSection() {
 
 // Flash animation
 async function flashWinner(winner) {
-    if (!settings.flashAnimation || !winner) {
-        winners.push(winner.number);
-        drawWinners();
-        return;
-    }
+    if (!winner) return;
 
     flashing = true;
-    const sectionIdx = winner.index;
-    const flashColor = settings.flashColor;
-    const originalColor = generatePastelColors(remainingNumbers.length, settings.darkness)[sectionIdx];
 
-    // Flash wheel section first
-    for (let i = 0; i < settings.flashCount; i++) {
-        drawWheel(sectionIdx, flashColor);
-        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
-        drawWheel(sectionIdx, originalColor);
-        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+    if (settings.flashAnimation) {
+        const sectionIdx = winner.index;
+        const flashColor = settings.flashColor;
+        const originalColor = generatePastelColors(remainingNumbers.length, settings.darkness)[sectionIdx];
+
+        // Flash wheel section
+        for (let i = 0; i < settings.flashCount; i++) {
+            drawWheel(sectionIdx, flashColor);
+            await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+            drawWheel(sectionIdx, originalColor);
+            await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+        }
     }
 
-    // Then update table and flash cell
+    // Remove winner and update table
     winners.push(winner.number);
+    remainingNumbers.splice(winner.index, 1);
+    if (settings.randomize) shuffle(remainingNumbers);
     drawWinners();
-    const table = document.getElementById('winnersTable');
-    const cellIdx = winners.length - 1; // Last added winner
-    const cell = table.rows[Math.floor(cellIdx / 10)].cells[cellIdx % 10];
-    const originalBg = settings.bgColor;
 
-    for (let i = 0; i < settings.flashCount; i++) {
-        cell.style.backgroundColor = flashColor;
-        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
-        cell.style.backgroundColor = originalBg;
-        await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+    // Flash table cell
+    if (settings.flashAnimation) {
+        const table = document.getElementById('winnersTable');
+        const cellIdx = winners.length - 1;
+        const cell = table.rows[Math.floor(cellIdx / 10)].cells[cellIdx % 10];
+        const originalBg = settings.bgColor;
+
+        for (let i = 0; i < settings.flashCount; i++) {
+            cell.style.backgroundColor = settings.flashColor;
+            await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+            cell.style.backgroundColor = originalBg;
+            await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
+        }
     }
 
     flashing = false;
@@ -216,19 +221,13 @@ function drawWinners() {
 // Event listeners
 document.getElementById('spinBtn').addEventListener('click', () => {
     if (!spinning && !flashing && remainingNumbers.length) {
-        if (winners.length) {
-            remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
-            if (settings.randomize) shuffle(remainingNumbers);
-        }
-        if (remainingNumbers.length) {
-            spinning = true;
-            spinSpeed = settings.maxSpeed;
-            spinDistanceRemaining = Math.random() * (settings.maxSpins - settings.minSpins) + settings.minSpins * 360;
-            if (settings.randomSpinDirection) {
-                spinSpeed = Math.random() < 0.5 ? -spinSpeed : spinSpeed;
-            } else {
-                spinSpeed = settings.spinDirection === 'clockwise' ? spinSpeed : -spinSpeed;
-            }
+        spinning = true;
+        spinSpeed = settings.maxSpeed;
+        spinDistanceRemaining = Math.random() * (settings.maxSpins - settings.minSpins) + settings.minSpins * 360;
+        if (settings.randomSpinDirection) {
+            spinSpeed = Math.random() < 0.5 ? -spinSpeed : spinSpeed;
+        } else {
+            spinSpeed = settings.spinDirection === 'clockwise' ? spinSpeed : -spinSpeed;
         }
     }
 });
@@ -375,10 +374,6 @@ function animate() {
             spinSpeed = settings.spinDirection === 'clockwise' ? spinSpeed : -spinSpeed;
         }
         autoSpinCount--;
-        if (winners.length) {
-            remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
-            if (settings.randomize) shuffle(remainingNumbers);
-        }
     }
     drawWheel();
     if (!spinning && !flashing) drawWinners();
