@@ -25,12 +25,12 @@ let settings = {
     wheelSize: 250,
     wheelFontSize: 20,
     tableFontSize: 16,
-    spinDirection: 'counterclockwise', // New: Spin direction
-    randomSpinDirection: false,        // New: Randomize direction
-    flashAnimation: true,              // New: Enable flash
-    flashSpeed: 200,                   // New: Flash speed in ms
-    flashCount: 2,                     // New: Number of flashes
-    flashColor: '#FFFFFF'              // New: Flash color
+    spinDirection: 'counterclockwise',
+    randomSpinDirection: false,
+    flashAnimation: true,
+    flashSpeed: 200,
+    flashCount: 2,
+    flashColor: '#FFFFFF'
 };
 let defaultSettings = { ...settings };
 
@@ -47,6 +47,7 @@ let spinDistanceRemaining = 0;
 let spinning = false;
 let autoSpinning = false;
 let autoSpinCount = 0;
+let flashing = false; // New: Track flashing state
 
 // Generate pastel colors
 function generatePastelColors(numSections, darkness) {
@@ -166,6 +167,7 @@ async function flashWinner(winner) {
         return;
     }
 
+    flashing = true;
     const sectionIdx = winner.index;
     const cellIdx = winners.length;
     const flashColor = settings.flashColor;
@@ -191,6 +193,8 @@ async function flashWinner(winner) {
         cell.style.backgroundColor = originalBg;
         await new Promise(resolve => setTimeout(resolve, settings.flashSpeed));
     }
+
+    flashing = false;
 }
 
 // Draw winners table
@@ -210,7 +214,7 @@ function drawWinners() {
 
 // Event listeners
 document.getElementById('spinBtn').addEventListener('click', () => {
-    if (!spinning && remainingNumbers.length) {
+    if (!spinning && !flashing && remainingNumbers.length) {
         if (winners.length) {
             remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
             if (settings.randomize) shuffle(remainingNumbers);
@@ -229,7 +233,7 @@ document.getElementById('spinBtn').addEventListener('click', () => {
 });
 
 document.getElementById('autoSpinBtn').addEventListener('click', () => {
-    if (!spinning && remainingNumbers.length) {
+    if (!spinning && !flashing && remainingNumbers.length) {
         autoSpinning = true;
         autoSpinCount = settings.autoSpin;
     }
@@ -343,39 +347,37 @@ document.getElementById('resetSettings').addEventListener('click', () => {
 
 // Animation loop
 function animate() {
-    if (spinning || autoSpinning) {
-        if (!spinning && autoSpinning && autoSpinCount > 0 && remainingNumbers.length) {
-            spinning = true;
-            spinSpeed = settings.maxSpeed;
-            spinDistanceRemaining = Math.random() * (settings.maxSpins - settings.minSpins) + settings.minSpins * 360;
-            if (settings.randomSpinDirection) {
-                spinSpeed = Math.random() < 0.5 ? -spinSpeed : spinSpeed;
-            } else {
-                spinSpeed = settings.spinDirection === 'clockwise' ? spinSpeed : -spinSpeed;
-            }
-            autoSpinCount--;
-            if (winners.length) {
-                remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
-                if (settings.randomize) shuffle(remainingNumbers);
+    if (spinning && !flashing) {
+        angle += spinSpeed * Math.PI / 180;
+        spinDistanceRemaining -= Math.abs(spinSpeed);
+        if (spinDistanceRemaining <= 0) {
+            spinSpeed -= settings.deceleration * Math.sign(spinSpeed);
+            if (Math.abs(spinSpeed) <= settings.deceleration) { // Ensure full stop
+                spinSpeed = 0;
+                spinning = false;
+                const winner = getWinningSection();
+                flashWinner(winner).then(() => {
+                    if (autoSpinning && autoSpinCount === 0) autoSpinning = false;
+                });
             }
         }
-        if (spinning) {
-            angle += spinSpeed * Math.PI / 180; // Positive for clockwise, negative for counterclockwise
-            spinDistanceRemaining -= Math.abs(spinSpeed);
-            if (spinDistanceRemaining <= 0) {
-                spinSpeed -= settings.deceleration * Math.sign(spinSpeed);
-                if (Math.abs(spinSpeed) <= 0) {
-                    spinning = false;
-                    const winner = getWinningSection();
-                    flashWinner(winner).then(() => {
-                        if (autoSpinning && autoSpinCount === 0) autoSpinning = false;
-                    });
-                }
-            }
+    } else if (autoSpinning && !spinning && !flashing && autoSpinCount > 0 && remainingNumbers.length) {
+        spinning = true;
+        spinSpeed = settings.maxSpeed;
+        spinDistanceRemaining = Math.random() * (settings.maxSpins - settings.minSpins) + settings.minSpins * 360;
+        if (settings.randomSpinDirection) {
+            spinSpeed = Math.random() < 0.5 ? -spinSpeed : spinSpeed;
+        } else {
+            spinSpeed = settings.spinDirection === 'clockwise' ? spinSpeed : -spinSpeed;
+        }
+        autoSpinCount--;
+        if (winners.length) {
+            remainingNumbers.splice(remainingNumbers.indexOf(winners[winners.length - 1]), 1);
+            if (settings.randomize) shuffle(remainingNumbers);
         }
     }
     drawWheel();
-    if (!spinning) drawWinners();
+    if (!spinning && !flashing) drawWinners();
     requestAnimationFrame(animate);
 }
 
