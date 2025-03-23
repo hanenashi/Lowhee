@@ -47,7 +47,7 @@ let spinDistanceRemaining = 0;
 let spinning = false;
 let autoSpinning = false;
 let autoSpinCount = 0;
-let flashing = false; // New: Track flashing state
+let flashing = false;
 
 // Generate pastel colors
 function generatePastelColors(numSections, darkness) {
@@ -242,6 +242,9 @@ document.getElementById('autoSpinBtn').addEventListener('click', () => {
 document.getElementById('resetBtn').addEventListener('click', () => {
     angle = Math.PI / 2;
     winners = [];
+    spinSpeed = 0;
+    spinning = false;
+    flashing = false;
     remainingNumbers = Array.from({ length: settings.sections }, (_, i) => i + 1);
 });
 
@@ -352,8 +355,8 @@ function animate() {
         spinDistanceRemaining -= Math.abs(spinSpeed);
         if (spinDistanceRemaining <= 0) {
             spinSpeed -= settings.deceleration * Math.sign(spinSpeed);
-            if (Math.abs(spinSpeed) <= settings.deceleration) { // Ensure full stop
-                spinSpeed = 0;
+            if (Math.abs(spinSpeed) < 0.01) { // Tighter threshold
+                spinSpeed = 0; // Force stop
                 spinning = false;
                 const winner = getWinningSection();
                 flashWinner(winner).then(() => {
